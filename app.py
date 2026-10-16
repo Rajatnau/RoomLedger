@@ -1,14 +1,19 @@
 import csv
 import io
-import sqlite3
+import os
 from calendar import month_name
 from datetime import date, datetime
-from pathlib import Path
 
+import psycopg2
+import psycopg2.extras
 from flask import Flask, Response, g, redirect, render_template, request, url_for
 
-BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "roomledger.db"
+DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL (or POSTGRES_URL) environment variable is required. "
+        "Set it to your Postgres/Neon/Vercel Postgres connection string."
+    )
 
 ROOMMATES = ["Rajat", "Solai", "Jogeswara"]
 SELF = "Rajat"
@@ -48,10 +53,28 @@ app.jinja_env.globals["roommate_style"] = ROOMMATE_STYLE
 app.jinja_env.globals["category_style"] = CATEGORY_STYLE
 
 
+class DB:
+    """Thin wrapper so existing sqlite-style db.execute(sql, params) call sites
+    work unchanged against psycopg2 (translates '?' placeholders to '%s')."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql, params=()):
+        cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql.replace("?", "%s"), params)
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
+
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
+        g.db = DB(psycopg2.connect(DATABASE_URL))
     return g.db
 
 
@@ -63,22 +86,23 @@ def close_db(exception=None):
 
 
 def init_db():
-    db = sqlite3.connect(DB_PATH)
-    db.execute(
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute(
         """
         CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             month TEXT NOT NULL,
             expense_date TEXT NOT NULL,
             category TEXT NOT NULL,
-            amount REAL NOT NULL,
+            amount DOUBLE PRECISION NOT NULL,
             paid_by TEXT NOT NULL,
             title TEXT NOT NULL,
             created_at TEXT NOT NULL
         )
         """
     )
-    db.execute(
+    cur.execute(
         """
         CREATE TABLE IF NOT EXISTS settled_months (
             month TEXT PRIMARY KEY,
@@ -86,8 +110,9 @@ def init_db():
         )
         """
     )
-    db.commit()
-    db.close()
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 def current_month():

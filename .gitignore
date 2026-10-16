@@ -2,3 +2,9 @@ __pycache__/
 *.pyc
 roomledger.db
 .venv/
+
+.vercel
+.env*
+.agents/
+.claude/
+skills-lock.json
