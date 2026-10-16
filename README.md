@@ -2,14 +2,20 @@
 
 Roommate expense sharing & monthly settlement web app for Rajat, Solai, and Jogeswara.
 
+**Live app:** https://roomledger-ochre.vercel.app
+
 ## Run locally
+
+Requires a Postgres database (the app uses Postgres everywhere, including locally, so dev matches production). Easiest path: use the same Neon database Vercel provisioned.
 
 ```
 pip install -r requirements.txt
+vercel env pull .env.local   # pulls DATABASE_URL from the linked Vercel project
+set -a; source .env.local; set +a   # or just export DATABASE_URL=... manually
 python app.py
 ```
 
-Open http://127.0.0.1:5000 in your browser. Data is stored in `roomledger.db` (SQLite), created automatically on first run.
+Open http://127.0.0.1:5000.
 
 ## Features
 
@@ -19,10 +25,18 @@ Open http://127.0.0.1:5000 in your browser. Data is stored in `roomledger.db` (S
 - One-click WhatsApp-ready report (group summary + individual statements) with copy buttons.
 - "Settle Up Month" locks a month (no more edits) and rolls you into the next month; a locked month can be reopened if needed.
 - History page listing all months with totals and settled status.
+- CSV export and demo data seeding per month.
 
-## Deploying online
+## Deployment (Vercel)
 
-This is a standard Flask app, so it can be deployed to any Python host, e.g. Render, Railway, PythonAnywhere, or Fly.io:
+Deployed as Python serverless functions (`api/index.py` wraps the Flask `app`, routed via `vercel.json`) with a **Neon Postgres** database (added via the Vercel Postgres/Neon marketplace integration, resource name `roomledger-db`) for persistent storage — Vercel's filesystem is ephemeral, so local SQLite wouldn't survive across requests.
 
-- Use `gunicorn app:app` as the start command (add `gunicorn` to requirements.txt for production).
-- The SQLite file persists on disk — use a host with a persistent volume (Render/Fly disks, Railway volumes) so data survives restarts.
+To redeploy after changes:
+
+```
+git push                 # if the GitHub integration auto-deploys
+# or
+npx vercel deploy --prod
+```
+
+`DATABASE_URL` is already configured as a project environment variable in Vercel (production/preview/development) — no manual setup needed for new deployments.
