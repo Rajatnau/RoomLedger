@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}RoomLedger · {{ month_label }}{% endblock %}
+{% block content %}
+
+<!-- Month selector -->
+<div class="bg-white rounded-xl border border-slate-200 px-4 py-3 mb-4 flex items-center justify-between flex-wrap gap-3">
+  <div class="flex items-center gap-3">
+    <span class="text-xl">🗓️</span>
+    <a href="{{ url_for('dashboard', month=prev_month) }}" class="text-slate-500 hover:text-slate-800 text-lg px-1">‹</a>
+    <span class="font-semibold text-slate-800">{{ month_label }}</span>
+    <a href="{{ url_for('dashboard', month=next_month) }}" class="text-slate-500 hover:text-slate-800 text-lg px-1">›</a>
+  </div>
+  {% if settled %}
+  <span class="text-xs font-bold tracking-wide bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-full">✓ SETTLED UP</span>
+  {% else %}
+  <span class="text-xs font-bold tracking-wide bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full">● OPEN</span>
+  {% endif %}
+</div>
+
+{% if settled %}
+<div class="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-4 mb-4 flex items-center justify-between flex-wrap gap-3">
+  <div class="flex items-center gap-3">
+    <span class="h-9 w-9 rounded-full bg-emerald-500 text-white flex items-center justify-center">🔒</span>
+    <div>
+      <p class="font-semibold text-emerald-900">This Month is Settled &amp; Closed!</p>
+      <p class="text-sm text-emerald-700">All expenses for this month ({{ month_label }}) are finalized. RoomLedger data is locked.</p>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <form method="post" action="{{ url_for('reopen_month', month=month) }}">
+      <button class="text-sm font-semibold border border-emerald-300 text-emerald-800 bg-white rounded-lg px-3 py-2 hover:bg-emerald-100">🔓 Reopen Month</button>
+    </form>
+    <a href="{{ url_for('dashboard', month=next_month) }}" class="text-sm font-semibold bg-emerald-600 text-white rounded-lg px-3 py-2 hover:bg-emerald-700">Go to Next Month →</a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Stat cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Month Expense</span>
+      <span class="h-8 w-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">💼</span>
+    </div>
+    <p class="text-2xl font-bold text-slate-900">₹{{ "{:,.0f}".format(settlement.total) }}</p>
+    <p class="text-xs text-slate-500 mt-1">{{ settlement.item_count }} items · ₹{{ "{:,.0f}".format(settlement.share) }}/person</p>
+  </div>
+
+  {% for c in categories %}
+  {% set cs = category_style[c] %}
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">{{ c }}</span>
+      <span class="h-8 w-8 rounded-lg {{ cs.bg }} {{ cs.text }} flex items-center justify-center">{{ cs.icon }}</span>
+    </div>
+    <p class="text-2xl font-bold text-slate-900">₹{{ "{:,.0f}".format(settlement.category_totals[c]) }}</p>
+    <p class="text-xs text-slate-500 mt-1 mb-2">{{ settlement.category_pct[c] }}% of total</p>
+    <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+      <div class="h-full {{ cs.bar }}" style="width: {{ settlement.category_pct[c] }}%"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Who owes whom + Net balances -->
+<div class="grid md:grid-cols-2 gap-4 mb-4">
+  <div class="bg-slate-900 rounded-xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-white font-semibold flex items-center gap-2">🤝 Who Owes Whom</h2>
+      <span class="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded">FINAL PAYMENTS</span>
+    </div>
+    {% if settlement.transactions %}
+    <div class="space-y-2 mb-4">
+      {% for t in settlement.transactions %}
+      {% set fs = roommate_style[t.from] %}
+      {% set ts = roommate_style[t.to] %}
+      <div class="flex items-center justify-between bg-slate-800 rounded-lg px-3 py-2.5">
+        <div class="flex items-center gap-2 text-sm text-slate-100">
+          <span class="h-6 w-6 rounded-full {{ fs.bg }} text-white text-xs flex items-center justify-center font-bold">{{ fs.initial }}</span>
+          <span>{{ display_name(t.from) }}</span>
+          <span class="text-slate-500">pays</span>
+          <span class="h-6 w-6 rounded-full {{ ts.bg }} text-white text-xs flex items-center justify-center font-bold">{{ ts.initial }}</span>
+          <span>{{ display_name(t.to) }}</span>
+        </div>
+        <span class="font-bold text-emerald-400">₹{{ "{:,.0f}".format(t.amount) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-400 text-sm mb-4">No expenses yet — everyone's settled up!</p>
+    {% endif %}
+    <a href="{{ url_for('report', month=month) }}" class="block text-center bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg py-2.5 text-sm mb-3">💬 WhatsApp Full Month Summary</a>
+    <a href="{{ url_for('export_csv', month=month) }}" class="block text-center text-slate-400 hover:text-slate-200 text-xs">⬇ Export Month CSV</a>
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-slate-800">👤 Roommate Net Balances</h2>
+      <span class="text-xs text-slate-400">Net = Paid − Share</span>
+    </div>
+    <div class="space-y-3">
+      {% for p in roommates %}
+      {% set rs = roommate_style[p] %}
+      {% set bal = settlement.balances[p] %}
+      <div class="rounded-lg border {{ 'border-emerald-200 bg-emerald-50' if bal >= 0 else 'border-rose-200 bg-rose-50' }} px-3 py-2.5 flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="h-8 w-8 rounded-full {{ rs.bg }} text-white text-sm flex items-center justify-center font-bold">{{ rs.initial }}</span>
+          <div>
+            <p class="font-semibold text-sm text-slate-800">{{ display_name(p) }}</p>
+            <p class="text-xs text-slate-500">Paid ₹{{ "{:,.0f}".format(settlement.paid_totals[p]) }} · Share ₹{{ "{:,.0f}".format(settlement.share) }}</p>
+          </div>
+        </div>
+        {% if bal >= 0 %}
+        <span class="text-xs font-bold bg-emerald-600 text-white px-2.5 py-1 rounded-full">Gets back ₹{{ "{:,.0f}".format(bal) }}</span>
+        {% else %}
+        <span class="text-xs font-bold bg-rose-600 text-white px-2.5 py-1 rounded-full">Owes ₹{{ "{:,.0f}".format(-bal) }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Detailed per-payer breakdown -->
+<div class="bg-slate-900 rounded-xl p-5 mb-4">
+  <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+    <h2 class="text-white font-semibold">📋 Detailed Per-Payer Breakdown</h2>
+    <span class="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded">STEP-BY-STEP OWED LIST</span>
+  </div>
+  <p class="text-xs text-slate-400 mb-4">Direct breakdown showing exactly how much each person owes whoever paid for expenses upfront (before combining/netting debts).</p>
+  <div class="grid md:grid-cols-3 gap-3">
+    {% for payer in roommates %}
+    {% set ps = roommate_style[payer] %}
+    <div class="bg-slate-800 rounded-lg p-3">
+      <p class="text-[11px] font-bold {{ ps.text }} opacity-90 uppercase tracking-wide mb-2">Paid by {{ display_name(payer) }}</p>
+      {% if settlement.paid_totals[payer] > 0 %}
+      <div class="space-y-1.5">
+        {% for row in settlement.raw_debts[payer] %}
+        <div class="flex items-center justify-between bg-slate-900/60 rounded px-2.5 py-1.5 text-sm">
+          <span class="text-slate-200">{{ row.from }} → {{ display_name(payer) }}</span>
+          <span class="font-bold text-rose-400">₹{{ "{:,.0f}".format(row.amount) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-xs text-slate-500">No expenses paid yet.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if not settled %}
+<div class="bg-white rounded-xl border border-slate-200 p-5 mb-4">
+  <h2 class="font-semibold text-slate-800 mb-3">➕ Add Expense</h2>
+  <form method="post" action="{{ url_for('add_expense', month=month) }}" class="grid md:grid-cols-6 gap-2">
+    <input type="date" name="expense_date" value="{{ today }}" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm md:col-span-1">
+    <input type="text" name="title" placeholder="Title" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm md:col-span-2">
+    <select name="category" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+      {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+    </select>
+    <select name="paid_by" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+      {% for p in roommates %}<option value="{{ p }}">{{ display_name(p) }}</option>{% endfor %}
+    </select>
+    <input type="number" step="0.01" min="0.01" name="amount" placeholder="Amount (₹)" required class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+    <button type="submit" class="md:col-span-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg py-2.5 text-sm">Add Expense</button>
+  </form>
+</div>
+{% endif %}
+
+<!-- Expense log -->
+<div class="bg-white rounded-xl border border-slate-200 p-5">
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+    <h2 class="font-semibold text-slate-800">🧾 RoomLedger Expense Log <span class="text-slate-400 font-normal text-sm">({{ month_label }})</span></h2>
+    <div class="flex gap-2">
+      <input id="search-box" type="text" placeholder="Search…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm" onkeyup="filterRows()">
+      <select id="category-filter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm" onchange="filterRows()">
+        <option value="">All Categories</option>
+        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+
+  {% if expenses %}
+  <div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-slate-400 text-xs uppercase tracking-wide border-b border-slate-200">
+        <th class="py-2 pr-3">Date</th>
+        <th class="py-2 pr-3">Title</th>
+        <th class="py-2 pr-3">Category</th>
+        <th class="py-2 pr-3">Paid By</th>
+        <th class="py-2 pr-3">Split Among</th>
+        <th class="py-2 pr-3">Amount</th>
+        {% if not settled %}<th class="py-2 pr-3"></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in expenses %}
+      {% set cs = category_style[e.category] %}
+      {% set ps = roommate_style[e.paid_by] %}
+      <tr class="border-b border-slate-100 expense-row" data-title="{{ e.title|lower }}" data-category="{{ e.category }}">
+        <td class="py-2.5 pr-3 text-slate-600">{{ e.expense_date }}</td>
+        <td class="py-2.5 pr-3 font-medium text-slate-800">{{ e.title }}</td>
+        <td class="py-2.5 pr-3"><span class="text-xs font-semibold {{ cs.bg }} {{ cs.text }} px-2 py-1 rounded-full">{{ cs.icon }} {{ e.category }}</span></td>
+        <td class="py-2.5 pr-3">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="h-5 w-5 rounded-full {{ ps.bg }} text-white text-[10px] flex items-center justify-center font-bold">{{ ps.initial }}</span>
+            {{ display_name(e.paid_by) }}
+          </span>
+        </td>
+        <td class="py-2.5 pr-3"><span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">All</span></td>
+        <td class="py-2.5 pr-3 font-bold text-slate-900">₹{{ "{:,.0f}".format(e.amount) }}</td>
+        {% if not settled %}
+        <td class="py-2.5 pr-3">
+          <form method="post" action="{{ url_for('delete_expense', month=month, expense_id=e.id) }}" onsubmit="return confirm('Delete this expense?');">
+            <button type="submit" class="text-rose-500 hover:text-rose-700 text-xs font-semibold">Delete</button>
+          </form>
+        </td>
+        {% else %}
+        <td class="py-2.5 pr-3"><span class="text-xs font-semibold text-slate-400">🔒 Locked</span></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="text-slate-500 text-sm">No expenses logged yet.</p>
+  {% endif %}
+</div>
+
+<script>
+function filterRows() {
+  const q = document.getElementById('search-box').value.toLowerCase();
+  const cat = document.getElementById('category-filter').value;
+  document.querySelectorAll('.expense-row').forEach(row => {
+    const matchesText = row.dataset.title.includes(q);
+    const matchesCat = !cat || row.dataset.category === cat;
+    row.style.display = (matchesText && matchesCat) ? '' : 'none';
+  });
+}
+</script>
+
+{% endblock %}

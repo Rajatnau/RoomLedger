@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}RoomLedger{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com/3.4.10"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+  <header class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-800 text-white">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between flex-wrap gap-3">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-xl bg-white/15 flex items-center justify-center text-xl">🏠</div>
+        <div>
+          <div class="flex items-center gap-2">
+            <a href="{{ url_for('home') }}" class="font-bold text-lg leading-none">RoomLedger</a>
+            <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-semibold">v2.0</span>
+          </div>
+          <p class="text-xs text-indigo-200 mt-0.5">Monthly Roommate Expense &amp; Settlement Tracker • Rajat, Solai, Jogeswara</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="{{ url_for('roommates') }}" class="text-sm font-medium border border-white/30 rounded-lg px-3 py-1.5 hover:bg-white/10">👥 Roommates</a>
+        {% if month %}
+        <form method="post" action="{{ url_for('load_demo', month=month) }}">
+          <button class="text-sm font-semibold bg-amber-400 text-amber-950 rounded-lg px-3 py-1.5 hover:bg-amber-300">✨ Demo Data</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto">
+      {% set tab_month = month or current_month() %}
+      {% set tabs = [
+        ('dashboard', 'Monthly Dashboard', '📅', url_for('dashboard', month=tab_month)),
+        ('report', 'Person Settlement Reports', '👤', url_for('report', month=tab_month)),
+        ('history', 'All Months History', '🗂️', url_for('history'))
+      ] %}
+      {% for key, label, icon, href in tabs %}
+      <a href="{{ href }}"
+         class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap {{ 'border-indigo-600 text-indigo-700' if active_tab == key else 'border-transparent text-slate-500 hover:text-slate-800' }}">
+        {{ icon }} {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Person Settlement Reports · {{ month_label }}{% endblock %}
+{% block content %}
+
+<h1 class="font-semibold text-slate-800 text-lg mb-4">👤 Person Settlement Reports — {{ month_label }}</h1>
+
+<div class="bg-slate-900 rounded-xl p-5 mb-4">
+  <h2 class="text-white font-semibold mb-3">📊 Full Group Summary</h2>
+  <pre class="whitespace-pre-wrap bg-slate-800 text-slate-100 rounded-lg p-4 text-sm font-sans" id="group-text">{{ group_text }}</pre>
+  <button class="mt-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg px-4 py-2" onclick="copyText('group-text', this)">📋 Copy</button>
+</div>
+
+<div class="grid md:grid-cols-3 gap-4">
+  {% for name in roommates %}
+  {% set rs = roommate_style[name] %}
+  <div class="bg-white rounded-xl border border-slate-200 p-5">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="h-8 w-8 rounded-full {{ rs.bg }} text-white text-sm flex items-center justify-center font-bold">{{ rs.initial }}</span>
+      <h2 class="font-semibold text-slate-800">{{ display_name(name) }}'s Statement</h2>
+    </div>
+    <pre class="whitespace-pre-wrap bg-slate-50 rounded-lg p-3 text-xs font-sans text-slate-700" id="text-{{ loop.index }}">{{ individual_texts[name] }}</pre>
+    <button class="mt-3 w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-lg px-4 py-2" onclick="copyText('text-{{ loop.index }}', this)">📋 Copy</button>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+function copyText(id, btn) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    const original = btn.textContent;
+    btn.textContent = "✅ Copied!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+}
+</script>
+
+{% endblock %}
