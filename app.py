@@ -17,7 +17,14 @@ if not DATABASE_URL:
 
 ROOMMATES = ["Rajat", "Solai", "Jogeswara"]
 SELF = "Rajat"
-CATEGORIES = ["Rent", "Food", "Things & Utilities"]
+CATEGORIES = [
+    "Food",
+    "Electricity Bill",
+    "Water Bill",
+    "Household Items",
+    "Travel",
+    "Utilities and Other Expenses",
+]
 
 ROOMMATE_STYLE = {
     "Rajat": {"bg": "bg-indigo-600", "bg_light": "bg-indigo-50", "text": "text-indigo-700",
@@ -30,14 +37,18 @@ ROOMMATE_STYLE = {
 
 CATEGORY_STYLE = {
     "Food": {"icon": "\U0001F354", "bg": "bg-emerald-100", "text": "text-emerald-700", "bar": "bg-emerald-500"},
-    "Rent": {"icon": "\U0001F3E0", "bg": "bg-indigo-100", "text": "text-indigo-700", "bar": "bg-indigo-500"},
-    "Things & Utilities": {"icon": "⚡", "bg": "bg-amber-100", "text": "text-amber-700", "bar": "bg-amber-500"},
+    "Electricity Bill": {"icon": "⚡", "bg": "bg-amber-100", "text": "text-amber-700", "bar": "bg-amber-500"},
+    "Water Bill": {"icon": "\U0001F4A7", "bg": "bg-sky-100", "text": "text-sky-700", "bar": "bg-sky-500"},
+    "Household Items": {"icon": "\U0001F9FA", "bg": "bg-violet-100", "text": "text-violet-700", "bar": "bg-violet-500"},
+    "Travel": {"icon": "✈️", "bg": "bg-rose-100", "text": "text-rose-700", "bar": "bg-rose-500"},
+    "Utilities and Other Expenses": {"icon": "\U0001F527", "bg": "bg-slate-200", "text": "text-slate-700", "bar": "bg-slate-500"},
 }
 
 DEMO_EXPENSES = [
-    (1, "October Room Rent", "Rent", 15000, "Rajat"),
-    (5, "Grocery & Rice Provisions", "Food", 3600, "Solai"),
-    (10, "Wifi & Water Can", "Things & Utilities", 1200, "Rajat"),
+    (1, "Grocery & Rice Provisions", "Food", 3600, "Solai"),
+    (5, "October Electricity Bill", "Electricity Bill", 1800, "Rajat"),
+    (8, "Water Tanker", "Water Bill", 600, "Jogeswara"),
+    (12, "Kitchen Supplies", "Household Items", 1200, "Rajat"),
     (18, "Milk & Vegetables", "Food", 1800, "Jogeswara"),
 ]
 
@@ -148,7 +159,7 @@ def compute_settlement(expenses):
     category_totals = {c: 0.0 for c in CATEGORIES}
     paid_totals = {p: 0.0 for p in ROOMMATES}
     for e in expenses:
-        category_totals[e["category"]] += e["amount"]
+        category_totals[e["category"]] = category_totals.get(e["category"], 0.0) + e["amount"]
         paid_totals[e["paid_by"]] += e["amount"]
 
     balances = {p: round(paid_totals[p] - share, 2) for p in ROOMMATES}

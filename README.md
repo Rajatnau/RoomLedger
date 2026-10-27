@@ -19,7 +19,7 @@ Open http://127.0.0.1:5000.
 
 ## Features
 
-- Log expenses under Rent, Food, and Things & Utilities, tagged with who paid.
+- Log expenses under Food, Electricity Bill, Water Bill, Household Items, Travel, and Utilities and Other Expenses, tagged with who paid.
 - Dashboard per calendar month: total spend, category breakdown, individual net balances.
 - Automatic optimal "who owes whom" settlement (minimum number of transfers).
 - One-click WhatsApp-ready report (group summary + individual statements) with copy buttons.
