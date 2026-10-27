@@ -135,8 +135,9 @@
         {% if not settled %}
         <td class="py-2.5 pr-3">
           <div class="flex items-center gap-3">
-            <button type="button" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold"
-              onclick="openEditModal({{ e.id }}, '{{ e.expense_date }}', {{ e.title|tojson }}, {{ e.category|tojson }}, {{ e.paid_by|tojson }}, {{ e.amount }})">Edit</button>
+            <button type="button" class="edit-btn text-indigo-600 hover:text-indigo-800 text-xs font-semibold"
+              data-id="{{ e.id }}" data-date="{{ e.expense_date }}" data-title="{{ e.title }}"
+              data-category="{{ e.category }}" data-paid-by="{{ e.paid_by }}" data-amount="{{ e.amount }}">Edit</button>
             <form method="post" action="{{ url_for('delete_expense', month=month, expense_id=e.id) }}" onsubmit="return confirm('Delete this expense?');">
               <button type="submit" class="text-rose-500 hover:text-rose-700 text-xs font-semibold">Delete</button>
             </form>
@@ -288,13 +289,14 @@ function filterRows() {
   });
 }
 
-function openEditModal(id, expenseDate, title, category, paidBy, amount) {
-  document.getElementById('edit-form').action = `/month/{{ month }}/expense/${id}/edit`;
-  document.getElementById('edit-date').value = expenseDate;
-  document.getElementById('edit-title').value = title;
-  document.getElementById('edit-category').value = category;
-  document.getElementById('edit-paid-by').value = paidBy;
-  document.getElementById('edit-amount').value = amount;
+function openEditModal(btn) {
+  const d = btn.dataset;
+  document.getElementById('edit-form').action = `/month/{{ month }}/expense/${d.id}/edit`;
+  document.getElementById('edit-date').value = d.date;
+  document.getElementById('edit-title').value = d.title;
+  document.getElementById('edit-category').value = d.category;
+  document.getElementById('edit-paid-by').value = d.paidBy;
+  document.getElementById('edit-amount').value = d.amount;
   const modal = document.getElementById('edit-modal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -305,6 +307,10 @@ function closeEditModal() {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 }
+
+document.querySelectorAll('.edit-btn').forEach(btn => {
+  btn.addEventListener('click', () => openEditModal(btn));
+});
 </script>
 
 {% endblock %}
