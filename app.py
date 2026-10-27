@@ -282,6 +282,33 @@ def add_expense(month):
     return redirect(url_for("dashboard", month=month))
 
 
+@app.route("/month/<month>/expense/<int:expense_id>/edit", methods=["POST"])
+def edit_expense(month, expense_id):
+    db = get_db()
+    if is_settled(db, month):
+        return redirect(url_for("dashboard", month=month))
+
+    expense_date = request.form["expense_date"]
+    category = request.form["category"]
+    amount = float(request.form["amount"])
+    paid_by = request.form["paid_by"]
+    title = request.form.get("title", "").strip()
+
+    if category not in CATEGORIES or paid_by not in ROOMMATES or amount <= 0 or not title:
+        return redirect(url_for("dashboard", month=month))
+
+    db.execute(
+        """
+        UPDATE expenses
+        SET expense_date = ?, category = ?, amount = ?, paid_by = ?, title = ?
+        WHERE id = ? AND month = ?
+        """,
+        (expense_date, category, amount, paid_by, title, expense_id, month),
+    )
+    db.commit()
+    return redirect(url_for("dashboard", month=month))
+
+
 @app.route("/month/<month>/expense/<int:expense_id>/delete", methods=["POST"])
 def delete_expense(month, expense_id):
     db = get_db()

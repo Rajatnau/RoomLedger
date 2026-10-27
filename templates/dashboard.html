@@ -134,9 +134,13 @@
         <td class="py-2.5 pr-3 font-bold text-slate-900">₹{{ "{:,.0f}".format(e.amount) }}</td>
         {% if not settled %}
         <td class="py-2.5 pr-3">
-          <form method="post" action="{{ url_for('delete_expense', month=month, expense_id=e.id) }}" onsubmit="return confirm('Delete this expense?');">
-            <button type="submit" class="text-rose-500 hover:text-rose-700 text-xs font-semibold">Delete</button>
-          </form>
+          <div class="flex items-center gap-3">
+            <button type="button" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold"
+              onclick="openEditModal({{ e.id }}, '{{ e.expense_date }}', {{ e.title|tojson }}, {{ e.category|tojson }}, {{ e.paid_by|tojson }}, {{ e.amount }})">Edit</button>
+            <form method="post" action="{{ url_for('delete_expense', month=month, expense_id=e.id) }}" onsubmit="return confirm('Delete this expense?');">
+              <button type="submit" class="text-rose-500 hover:text-rose-700 text-xs font-semibold">Delete</button>
+            </form>
+          </div>
         </td>
         {% else %}
         <td class="py-2.5 pr-3"><span class="text-xs font-semibold text-slate-400">🔒 Locked</span></td>
@@ -249,6 +253,30 @@
   </div>
 </div>
 
+{% if not settled %}
+<!-- Edit expense modal -->
+<div id="edit-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 px-4">
+  <div class="bg-white rounded-xl p-5 w-full max-w-md">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-slate-800">✏️ Edit Expense</h2>
+      <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 text-lg leading-none">✕</button>
+    </div>
+    <form id="edit-form" method="post" class="space-y-2">
+      <input type="date" name="expense_date" id="edit-date" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+      <input type="text" name="title" id="edit-title" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+      <select name="category" id="edit-category" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+      <select name="paid_by" id="edit-paid-by" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        {% for p in roommates %}<option value="{{ p }}">{{ display_name(p) }}</option>{% endfor %}
+      </select>
+      <input type="number" step="0.01" min="0.01" name="amount" id="edit-amount" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm">
+      <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg py-2.5 text-sm">Save Changes</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
 <script>
 function filterRows() {
   const q = document.getElementById('search-box').value.toLowerCase();
@@ -258,6 +286,24 @@ function filterRows() {
     const matchesCat = !cat || row.dataset.category === cat;
     row.style.display = (matchesText && matchesCat) ? '' : 'none';
   });
+}
+
+function openEditModal(id, expenseDate, title, category, paidBy, amount) {
+  document.getElementById('edit-form').action = `/month/{{ month }}/expense/${id}/edit`;
+  document.getElementById('edit-date').value = expenseDate;
+  document.getElementById('edit-title').value = title;
+  document.getElementById('edit-category').value = category;
+  document.getElementById('edit-paid-by').value = paidBy;
+  document.getElementById('edit-amount').value = amount;
+  const modal = document.getElementById('edit-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('edit-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
 }
 </script>
 
