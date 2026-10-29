@@ -38,7 +38,7 @@
       {% set tabs = [
         ('dashboard', 'Monthly Dashboard', '📅', url_for('dashboard', month=tab_month)),
         ('report', 'Person Settlement Reports', '👤', url_for('report', month=tab_month)),
-        ('history', 'All Months History', '🗂️', url_for('history'))
+        ('history', 'All Months History', '📁', url_for('history'))
       ] %}
       {% for key, label, icon, href in tabs %}
       <a href="{{ href }}"

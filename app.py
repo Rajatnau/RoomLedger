@@ -40,7 +40,7 @@ CATEGORY_STYLE = {
     "Electricity Bill": {"icon": "⚡", "bg": "bg-amber-100", "text": "text-amber-700", "bar": "bg-amber-500"},
     "Water Bill": {"icon": "\U0001F4A7", "bg": "bg-sky-100", "text": "text-sky-700", "bar": "bg-sky-500"},
     "Household Items": {"icon": "\U0001F9FA", "bg": "bg-violet-100", "text": "text-violet-700", "bar": "bg-violet-500"},
-    "Travel": {"icon": "✈️", "bg": "bg-rose-100", "text": "text-rose-700", "bar": "bg-rose-500"},
+    "Travel": {"icon": "\U0001F9F3", "bg": "bg-rose-100", "text": "text-rose-700", "bar": "bg-rose-500"},
     "Utilities and Other Expenses": {"icon": "\U0001F527", "bg": "bg-slate-200", "text": "text-slate-700", "bar": "bg-slate-500"},
 }
 
@@ -406,7 +406,7 @@ def report(month):
     if settlement["transactions"]:
         for idx, t in enumerate(settlement["transactions"], start=1):
             group_lines.append(
-                f"{idx}. {display_name(t['from'])} ➡️ pays {display_name(t['to'])}: ₹{t['amount']:,.0f}"
+                f"{idx}. {display_name(t['from'])} → pays {display_name(t['to'])}: ₹{t['amount']:,.0f}"
             )
     else:
         group_lines.append("Everyone is already settled up!")
@@ -419,7 +419,7 @@ def report(month):
             f"\U0001F464 ROOMLEDGER REPORT FOR {p.upper()}",
             f"\U0001F5D3 Period: {month_label(month)}",
             f"\U0001F4B5 Amount Paid by {p}: ₹{settlement['paid_totals'][p]:,.0f}",
-            f"⚖️ {p}'s Fair Share: ₹{settlement['share']:,.0f}",
+            f"• {p}'s Fair Share: ₹{settlement['share']:,.0f}",
             "",
             "\U0001F4CC Required Settlement Action:",
         ]
@@ -427,9 +427,9 @@ def report(month):
         if own_actions:
             for t in own_actions:
                 if t["from"] == p:
-                    lines.append(f"• {p} ➡️ pays {display_name(t['to'])}: ₹{t['amount']:,.0f}")
+                    lines.append(f"• {p} → pays {display_name(t['to'])}: ₹{t['amount']:,.0f}")
                 else:
-                    lines.append(f"• {display_name(t['from'])} ➡️ pays {p}: ₹{t['amount']:,.0f}")
+                    lines.append(f"• {display_name(t['from'])} → pays {p}: ₹{t['amount']:,.0f}")
         else:
             lines.append("• No payment needed — you're settled!")
         lines += ["", "Please check and complete the transfer! \U0001F64F"]
