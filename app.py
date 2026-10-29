@@ -199,6 +199,17 @@ def compute_settlement(expenses):
         c: (round(category_totals[c] / total * 100) if total > 0 else 0) for c in CATEGORIES
     }
 
+    # Pairwise net balance between every two roommates (always one line per other
+    # roommate, unlike the globally-optimized `transactions` above which collapses
+    # to the fewest transfers). Positive amount = person owes `other`.
+    pairwise = {}
+    for p in ROOMMATES:
+        pairwise[p] = [
+            {"other": other, "amount": round(paid_totals[other] / len(ROOMMATES) - paid_totals[p] / len(ROOMMATES), 2)}
+            for other in ROOMMATES
+            if other != p
+        ]
+
     return {
         "total": round(total, 2),
         "share": round(share, 2),
@@ -208,6 +219,7 @@ def compute_settlement(expenses):
         "balances": balances,
         "transactions": transactions,
         "raw_debts": raw_debts,
+        "pairwise": pairwise,
         "item_count": len(expenses),
     }
 
@@ -423,15 +435,15 @@ def report(month):
             "",
             "\U0001F4CC Required Settlement Action:",
         ]
-        own_actions = [t for t in settlement["transactions"] if t["from"] == p or t["to"] == p]
-        if own_actions:
-            for t in own_actions:
-                if t["from"] == p:
-                    lines.append(f"• {p} → pays {display_name(t['to'])}: ₹{t['amount']:,.0f}")
-                else:
-                    lines.append(f"• {display_name(t['from'])} → pays {p}: ₹{t['amount']:,.0f}")
-        else:
-            lines.append("• No payment needed — you're settled!")
+        for row in settlement["pairwise"][p]:
+            other = row["other"]
+            amt = row["amount"]
+            if amt > 0.01:
+                lines.append(f"• {p} → pays {display_name(other)}: ₹{amt:,.0f}")
+            elif amt < -0.01:
+                lines.append(f"• {display_name(other)} → pays {p}: ₹{-amt:,.0f}")
+            else:
+                lines.append(f"• Settled with {display_name(other)} — no payment needed")
         lines += ["", "Please check and complete the transfer! \U0001F64F"]
         individual_texts[p] = "\n".join(lines)
 
